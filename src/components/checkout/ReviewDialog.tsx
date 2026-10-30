@@ -15,13 +15,15 @@ interface ReviewDialogProps {
   network: Network
   submitting: boolean
   errorMessage?: string
+  /** Os valores mudaram desde que a revisão foi aberta (ex.: evento de tempo real). */
+  changed: boolean
   onConfirm: () => void
 }
 
-export function ReviewDialog({ open, onOpenChange, quote, wallet, network, submitting, errorMessage, onConfirm }: ReviewDialogProps) {
+export function ReviewDialog({ open, onOpenChange, quote, wallet, network, submitting, errorMessage, changed, onConfirm }: ReviewDialogProps) {
   return (
     <Dialog open={open} onOpenChange={(next) => !submitting && onOpenChange(next)}>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto border-border bg-card sm:max-w-[560px]">
+      <DialogContent className="max-h-[90dvh] overflow-y-auto border-border bg-card sm:max-w-140">
         <DialogHeader>
           <DialogTitle>Revise seu pedido</DialogTitle>
           <DialogDescription>
@@ -29,6 +31,11 @@ export function ReviewDialog({ open, onOpenChange, quote, wallet, network, submi
           </DialogDescription>
         </DialogHeader>
 
+        {changed && !errorMessage && (
+          <p role="alert" className="rounded-md border border-primary/50 bg-primary/10 px-3 py-2 text-sm">
+            Os valores do pedido mudaram enquanto você revisava. Confira o novo total antes de confirmar.
+          </p>
+        )}
         {errorMessage && (
           <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
             {errorMessage}

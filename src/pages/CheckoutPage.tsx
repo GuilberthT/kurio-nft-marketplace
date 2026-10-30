@@ -58,6 +58,7 @@ function CheckoutForm() {
   const [errors, setErrors] = useState<FieldErrors<Field>>({})
   const [connectedId, setConnectedId] = useState<string | null>(null)
   const [reviewOpen, setReviewOpen] = useState(false)
+  const [reviewedTotal, setReviewedTotal] = useState<string | null>(null)
 
   useEffect(() => saveDraft(draft), [draft])
 
@@ -92,12 +93,17 @@ function CheckoutForm() {
       requestAnimationFrame(() => focusFirstInvalid(form))
       return
     }
-    createOrder.reset()
+        createOrder.reset()
+    setReviewedTotal(quote ? quoteSignature(quote) : null)
     setReviewOpen(true)
   }
 
+    const quoteChanged = Boolean(quote && reviewedTotal && quoteSignature(quote) !== reviewedTotal)
+
   function handleConfirm() {
     if (!quote || !wallet || createOrder.isPending) return
+    // O usuário confirma os valores que está vendo agora; eles viram a nova referência.
+    setReviewedTotal(quoteSignature(quote))
     createOrder.mutate(
       {
         expected: {
@@ -311,11 +317,17 @@ function CheckoutForm() {
           network={network}
           submitting={createOrder.isPending}
           errorMessage={orderError}
+           changed={quoteChanged}
           onConfirm={handleConfirm}
         />
       )}
     </>
   )
+}
+
+/** Resume o que importa para o usuário: itens, quantidades, preços, estoque e total. */
+function quoteSignature(quote: { totalEth: string; lines: { nftId: string; quantity: number; unitPriceEth: string; available: number }[] }) {
+  return JSON.stringify([quote.totalEth, quote.lines.map((line) => [line.nftId, line.quantity, line.unitPriceEth, line.available])])
 }
 
 interface TextFieldProps {

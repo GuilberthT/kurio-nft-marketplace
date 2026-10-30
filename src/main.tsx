@@ -1,19 +1,25 @@
-import { StrictMode } from 'react'
+import { StrictMode, type ComponentType } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 
-async function enableMocking() {
-  if (import.meta.env.VITE_ENABLE_MOCKS === 'false') return
+const mocksEnabled = import.meta.env.VITE_ENABLE_MOCKS !== 'false'
+
+async function enableMocking(): Promise<ComponentType | null> {
+  if (!mocksEnabled) return null
   const { worker } = await import('./mocks/browser')
-  await worker.start({ onUnhandledRequest: 'bypass' })
+  await worker.start({ onUnhandledRequest: 'bypass', quiet: import.meta.env.PROD })
+  const { MockPanel } = await import('./mocks/MockPanel')
+  return MockPanel
 }
 
 async function start() {
-  await enableMocking()
+  // O MSW precisa ligar ANTES de o app (e o socket.io-client) ser carregado.
+  const MockPanel = await enableMocking()
   const { default: App } = await import('./App')
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <App />
+      {MockPanel && <MockPanel />}
     </StrictMode>,
   )
 }

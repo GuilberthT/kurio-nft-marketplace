@@ -1,6 +1,7 @@
 import type { Order } from '@/types/order'
 import { getCart } from './cart'
 import { db, persistDb, type OrderRecord } from './db'
+import { touchNft } from './events'
 import { getScenario } from './scenarios'
 
 export const SETTLE_DELAY_MS = 2500
@@ -21,9 +22,9 @@ export function toPublicOrder({ userId, requestHash, settleAt, ...order }: Order
   return order
 }
 
-function fakeTxHash(orderId: string): string {
-  const hex = [...orderId.replace(/[^a-f0-9]/gi, '')].join('').padEnd(40, '0').slice(0, 40)
-  return `0x${hex}`
+function fakeTxHash(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(20))
+  return `0x${[...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('')}`
 }
 
 /** Decide o resultado do pagamento. Pedidos confirmados ou recusados não mudam mais. */
@@ -33,7 +34,7 @@ export function settleOrder(order: OrderRecord): void {
 
   if (approved) {
     order.status = 'confirmed'
-    order.txHash = fakeTxHash(order.id)
+    order.txHash = fakeTxHash()
     // Sai do carrinho só o que foi comprado, na quantidade comprada.
     const cart = getCart(`user:${order.userId}`)
     for (const line of order.lines) {
@@ -47,8 +48,12 @@ export function settleOrder(order: OrderRecord): void {
     order.declineReason = 'A carteira recusou o pagamento. Nenhum valor foi cobrado.'
     // Devolve o estoque reservado. O carrinho continua intacto.
     for (const line of order.lines) {
-      const edition = db.nfts.find((nft) => nft.id === line.nftId)?.editions.find((item) => item.type === line.edition)
-      if (edition) edition.available += line.quantity
+       const nft = db.nfts.find((item) => item.id === line.nftId)
+      const edition = nft?.editions.find((item) => item.type === line.edition)
+      if (nft && edition) {
+        edition.available += line.quantity
+        touchNft(nft)
+      }
     }
   }
   order.version += 1

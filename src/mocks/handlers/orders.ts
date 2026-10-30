@@ -5,6 +5,7 @@ import type { Wallet } from '@/types/wallet'
 import { getSessionUser } from '../auth'
 import { buildQuote, getCart } from '../cart'
 import { db, persistDb, type OrderRecord } from '../db'
+import { touchNft } from '../events'
 import { apiError } from '../http'
 import { hashRequest, scheduleSettlement, settleIfDue, SETTLE_DELAY_MS, toPublicOrder } from '../orders'
 import { getScenario, setScenario } from '../scenarios'
@@ -79,8 +80,12 @@ export const orderHandlers = [
 
     // 3. Cria o pedido pendente e reserva o estoque.
     for (const line of quote.lines) {
-      const edition = db.nfts.find((nft) => nft.id === line.nftId)?.editions.find((item) => item.type === line.edition)
-      if (edition) edition.available -= line.quantity
+     const nft = db.nfts.find((item) => item.id === line.nftId)
+      const edition = nft?.editions.find((item) => item.type === line.edition)
+      if (nft && edition) {
+        edition.available -= line.quantity
+        touchNft(nft)
+      }
     }
     const order: OrderRecord = {
       id: `order-${crypto.randomUUID()}`,
