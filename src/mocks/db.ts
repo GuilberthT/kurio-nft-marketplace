@@ -1,20 +1,33 @@
 import type { Nft } from '@/types/nft'
 import { NFT_FIXTURES } from './fixtures/nfts'
+import { USER_FIXTURES, type UserRecord } from './fixtures/users'
 
 const STORAGE_KEY = 'kurio:mock-db:v1'
 
+export interface SessionRecord {
+  token: string
+  userId: string
+  expiresAt: string
+}
+
 export interface MockDb {
   nfts: Nft[]
+  users: UserRecord[]
+  sessions: SessionRecord[]
 }
 
 function createInitialDb(): MockDb {
-  return { nfts: structuredClone(NFT_FIXTURES) }
+  return {
+    nfts: structuredClone(NFT_FIXTURES),
+    users: structuredClone(USER_FIXTURES),
+    sessions: [],
+  }
 }
 
 function loadDb(): MockDb {
   try {
     const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved) return JSON.parse(saved) as MockDb
+    if (saved) return { ...createInitialDb(), ...(JSON.parse(saved) as Partial<MockDb>) }
   } catch {
     // localStorage indisponível: segue com os dados iniciais
   }

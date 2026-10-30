@@ -1,12 +1,17 @@
 import { useState, type SubmitEvent } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { LogIn, Search, ShoppingCart, X } from 'lucide-react'
+import { LogIn, LogOut, Search, ShoppingCart, X } from 'lucide-react'
+import { useAuthDialog } from '@/auth/AuthDialogContext'
+import { useLogout, useSession } from '@/auth/session'
 import { Button } from '@/components/ui/button'
 
 const NAV_SOON = ['Criadores', 'Aprenda'] as const
 
 export function Header() {
   const navigate = useNavigate()
+  const { user, isLoading } = useSession()
+  const { openAuth } = useAuthDialog()
+  const logout = useLogout()
   const [searchOpen, setSearchOpen] = useState(false)
   const [term, setTerm] = useState('')
 
@@ -77,10 +82,22 @@ export function Header() {
             <ShoppingCart aria-hidden />
           </Button>
 
-          <Button size="sm" disabled title="Login em breve">
-            <LogIn aria-hidden />
-            Entrar
-          </Button>
+            {user ? (
+            <div className="flex items-center gap-2">
+              <span className="hidden text-sm sm:inline" title={user.email}>
+                @{user.username}
+              </span>
+              <Button size="sm" variant="outline" onClick={() => logout.mutate()} disabled={logout.isPending}>
+                <LogOut aria-hidden />
+                Sair
+              </Button>
+            </div>
+          ) : (
+            <Button size="sm" onClick={() => openAuth('login')} disabled={isLoading}>
+              <LogIn aria-hidden />
+              Entrar
+            </Button>
+          )}
         </div>
       </div>
     </header>

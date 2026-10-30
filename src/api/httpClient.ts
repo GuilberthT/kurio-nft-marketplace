@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { getSessionToken, SESSION_EXPIRED_EVENT } from '@/auth/sessionToken'
 import type { ApiErrorBody, ApiErrorCode } from '@/types/api'
 
 export class ApiError extends Error {
@@ -26,11 +27,21 @@ export const httpClient = axios.create({
   paramsSerializer: { indexes: null },
 })
 
+httpClient.interceptors.request.use((config) => {
+  const token = getSessionToken()
+  if (token) config.headers.Authorization = `Bearer ${token}`
+  return config
+})
+
 httpClient.interceptors.response.use(
   (response) => response,
   (error: unknown) => {
     if (axios.isAxiosError<ApiErrorBody>(error)) {
       const body = error.response?.data
+      const isAuthAttempt = /\/auth\/(login|register)$/.test(error.config?.url ?? '')
+      if (error.response?.status === 401 && error.config?.headers.Authorization && !isAuthAttempt) {
+        window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT))
+      }
       if (error.response && body?.code) {
         return Promise.reject(
           new ApiError(error.response.status, body.code, body.message, body.fieldErrors),
