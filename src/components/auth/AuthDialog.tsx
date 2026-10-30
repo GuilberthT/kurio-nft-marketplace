@@ -1,3 +1,4 @@
+import type { RefObject } from 'react'
 import type { AuthMode } from '@/auth/AuthDialogContext'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -11,6 +12,7 @@ interface AuthDialogProps {
   notice?: string
   onModeChange: (mode: AuthMode) => void
   onOpenChange: (open: boolean) => void
+  returnFocus: RefObject<HTMLElement | null>
 }
 
 const DESCRIPTIONS: Record<AuthMode, string> = {
@@ -18,12 +20,21 @@ const DESCRIPTIONS: Record<AuthMode, string> = {
   register: 'Crie seu perfil de colecionador e conecte uma carteira quando quiser.',
 }
 
-export function AuthDialog({ open, mode, notice, onModeChange, onOpenChange }: AuthDialogProps) {
+export function AuthDialog({ open, mode, notice, onModeChange, onOpenChange, returnFocus }: AuthDialogProps) {
   const close = () => onOpenChange(false)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto border-border bg-card sm:max-w-125">
+       <DialogContent
+        className="max-h-[90dvh] overflow-y-auto border-border bg-card sm:max-w-125"
+        onCloseAutoFocus={(event) => {
+          const target = returnFocus.current
+          if (target?.isConnected) {
+            event.preventDefault()
+            target.focus()
+          }
+        }}
+      >
         <DialogHeader className="items-center text-center">
           <DialogTitle className="flex items-center gap-3 text-xl">
             {(['login', 'register'] as const).map((item, index) => (

@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:e2e": "playwright test",
+    "test:e2e:report": "playwright show-report",
+    "typecheck": "tsc -b"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",

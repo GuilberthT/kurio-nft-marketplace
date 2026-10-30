@@ -1,3 +1,4 @@
+import { flushSync } from 'react-dom'
 import { useState, type SubmitEvent } from 'react'
 import { ApiError } from '@/api/httpClient'
 import { useRegister } from '@/auth/session'
@@ -32,9 +33,9 @@ export function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
       password: validateNewPassword(values.password),
       confirm: values.confirm === values.password ? undefined : 'As senhas não conferem.',
     })
-    setErrors(nextErrors)
+    flushSync(() => setErrors(nextErrors))
     if (Object.keys(nextErrors).length > 0) {
-      requestAnimationFrame(() => focusFirstInvalid(form))
+      focusFirstInvalid(form)
       return
     }
 
@@ -44,8 +45,8 @@ export function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
         onSuccess,
         onError: (error) => {
           if (error instanceof ApiError && error.fieldErrors) {
-            setErrors(error.fieldErrors as FieldErrors<Field>)
-            requestAnimationFrame(() => focusFirstInvalid(form))
+            flushSync(() => setErrors(error.fieldErrors as FieldErrors<Field>))
+            focusFirstInvalid(form)
           }
         },
       },

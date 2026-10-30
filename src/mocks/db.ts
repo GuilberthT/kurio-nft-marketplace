@@ -21,6 +21,7 @@ export interface MockDb {
     carts: Record<string, Cart>
     wallets: Record<string, Wallet[]>
     orders: OrderRecord[]
+    favorites: Record<string, string[]>
 }
 export interface OrderRecord extends Order {
   userId: string
@@ -36,6 +37,7 @@ function createInitialDb(): MockDb {
     carts: {},
     wallets: WALLET_FIXTURES,
     orders: [],
+    favorites: {},
   }
 }
 

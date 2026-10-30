@@ -75,6 +75,11 @@ export function MockPanel() {
             Timeout após criar o próximo pedido
           </label>
 
+           <label className="flex items-center gap-2">
+            <input type="checkbox" checked={scenario.favoriteFails} onChange={(e) => update({ favoriteFails: e.target.checked })} />
+            Favoritar falha (testa o rollback)
+          </label>
+
           <div className="grid gap-1.5 border-t border-border pt-3">
             <button type="button" className="rounded border border-border px-2 py-1 text-left" onClick={() => void action('Preço alterado', 'nft-change', { nftId: DEMO_NFT, priceEth: '1.49' })}>
               Emerald Ape #042 passa a custar 1.49 ETH

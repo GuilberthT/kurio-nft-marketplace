@@ -1,3 +1,4 @@
+import { flushSync } from 'react-dom'
 import { useState, type SubmitEvent } from 'react'
 import { ApiError } from '@/api/httpClient'
 import { useLogin } from '@/auth/session'
@@ -20,9 +21,9 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
       email: validateEmail(email),
       password: password ? undefined : 'Informe sua senha.',
     })
-    setErrors(nextErrors)
+    flushSync(() => setErrors(nextErrors))
     if (Object.keys(nextErrors).length > 0) {
-      requestAnimationFrame(() => focusFirstInvalid(form))
+      focusFirstInvalid(form)
       return
     }
     login.mutate({ email: email.trim(), password }, { onSuccess })

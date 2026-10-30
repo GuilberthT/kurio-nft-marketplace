@@ -6,9 +6,15 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+     globalIgnores(['dist', 'public', 'playwright-report', 'test-results']),
   {
     files: ['**/*.{ts,tsx}'],
+     rules: {
+      'react-refresh/only-export-components': [
+        'error',
+        { allowConstantExport: true, allowExportNames: ['useAuthDialog', 'useRealtime', 'buttonVariants'] },
+      ],
+    },
     extends: [
       js.configs.recommended,
       tseslint.configs.recommended,

@@ -1,3 +1,4 @@
+import { flushSync } from 'react-dom'
 import { useEffect, useState, type SubmitEvent } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { CheckCircle2, Wallet as WalletIcon } from 'lucide-react'
@@ -88,9 +89,9 @@ function CheckoutForm() {
       network: (NETWORKS as readonly string[]).includes(draft.network) ? undefined : 'Selecione uma rede.',
       walletId: !wallet ? 'Selecione uma carteira.' : connectedId !== wallet.id ? 'Conecte a carteira antes de continuar.' : undefined,
     })
-    setErrors(nextErrors)
+    flushSync(() => setErrors(nextErrors))
     if (Object.keys(nextErrors).length > 0) {
-      requestAnimationFrame(() => focusFirstInvalid(form))
+      focusFirstInvalid(form)
       return
     }
         createOrder.reset()

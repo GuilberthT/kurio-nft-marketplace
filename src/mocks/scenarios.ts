@@ -9,6 +9,8 @@ export interface MockScenario {
   walletRefuse: boolean
   /** A primeira criação de pedido grava o pedido mas a resposta "se perde" (timeout). */
   orderTimeoutOnce: boolean
+   /** Favoritar/desfavoritar falha (testa a atualização otimista com rollback). */
+  favoriteFails: boolean
 }
 
 export const DEFAULT_SCENARIO: MockScenario = {
@@ -17,6 +19,7 @@ export const DEFAULT_SCENARIO: MockScenario = {
   payment: 'aprovar',
   walletRefuse: false,
   orderTimeoutOnce: false,
+  favoriteFails: false,
 }
 
 export const SCENARIO_STORAGE_KEY = 'kurio:mock-scenario'

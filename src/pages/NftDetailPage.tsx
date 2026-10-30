@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getRouteApi, Link, useNavigate } from '@tanstack/react-router'
-import { Heart, Star } from 'lucide-react'
+import { Star } from 'lucide-react'
 import { ApiError } from '@/api/httpClient'
 import { useAddToCart } from '@/cart/useCart'
 import { NftCard } from '@/components/catalog/NftCard'
@@ -14,6 +14,7 @@ import { Button, buttonVariants } from '@/components/ui/button'
 import { NETWORK_LABELS } from '@/lib/labels'
 import { nftDetailQuery, nftListQuery } from '@/queries/nfts'
 import type { EditionType, Nft } from '@/types/nft'
+import { FavoriteButton } from '@/components/nft/FavoriteButton'
 
 const route = getRouteApi('/nft/$nftId')
 
@@ -134,14 +135,11 @@ function NftDetail({ nft }: { nft: Nft }) {
           ) : (
             <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
               <QuantityStepper value={quantity} max={maxQuantity} onChange={setQuantity} />
-              <div className="flex gap-2">
+              <div className="flex items-start gap-2">
                 <Button className="h-10 px-8 font-bold" onClick={buy} disabled={addToCart.isPending}>
                   {addToCart.isPending ? 'ADICIONANDO…' : 'COMPRAR'}
                 </Button>
-                <Button variant="outline" className="h-10" disabled title="Favoritos em breve">
-                  <Heart aria-hidden />
-                  Favoritar
-                </Button>
+                <FavoriteButton nftId={nft.id} />
               </div>
             </div>
           )}

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { AuthDialog } from '@/components/auth/AuthDialog'
 import { endSession } from './session'
@@ -19,7 +19,11 @@ export function AuthDialogProvider({ children }: { children: ReactNode }) {
     mode: 'login',
   })
 
+    // Quem abriu o modal recebe o foco de volta quando ele fecha (acessibilidade de teclado).
+  const returnFocus = useRef<HTMLElement | null>(null)
+
   const openAuth = useCallback((mode: AuthMode = 'login', notice?: string) => {
+    returnFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
     setState({ open: true, mode, notice })
   }, [])
 
@@ -42,7 +46,8 @@ export function AuthDialogProvider({ children }: { children: ReactNode }) {
         mode={state.mode}
         notice={state.notice}
         onModeChange={(mode) => setState((prev) => ({ ...prev, mode, notice: undefined }))}
-        onOpenChange={(open) => setState((prev) => ({ ...prev, open }))}
+        onOpenChange={(open) => setState((prev) => ({ ...prev, open }))}     
+        returnFocus={returnFocus}       
       />
     </AuthDialogContext.Provider>
   )
