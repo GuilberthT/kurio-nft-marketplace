@@ -3,7 +3,8 @@ import { Link, useNavigate } from '@tanstack/react-router'
 import { LogIn, LogOut, Search, ShoppingCart, X } from 'lucide-react'
 import { useAuthDialog } from '@/auth/AuthDialogContext'
 import { useLogout, useSession } from '@/auth/session'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { useCartCount } from '@/cart/useCart'
 
 const NAV_SOON = ['Criadores', 'Aprenda'] as const
 
@@ -12,6 +13,7 @@ export function Header() {
   const { user, isLoading } = useSession()
   const { openAuth } = useAuthDialog()
   const logout = useLogout()
+  const cartCount = useCartCount()
   const [searchOpen, setSearchOpen] = useState(false)
   const [term, setTerm] = useState('')
 
@@ -78,9 +80,21 @@ export function Header() {
             </Button>
           )}
 
-          <Button variant="ghost" size="icon" aria-label="Carrinho (em breve)" disabled>
+                    <Link
+            to="/carrinho"
+            className={buttonVariants({ variant: 'ghost', size: 'icon', className: 'relative' })}
+            aria-label={cartCount > 0 ? `Carrinho, ${cartCount} itens` : 'Carrinho vazio'}
+          >
             <ShoppingCart aria-hidden />
-          </Button>
+            {cartCount > 0 && (
+              <span
+                aria-hidden
+                className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground"
+              >
+                {cartCount > 9 ? '9+' : cartCount}
+              </span>
+            )}
+          </Link>
 
             {user ? (
             <div className="flex items-center gap-2">

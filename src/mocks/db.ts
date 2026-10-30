@@ -1,3 +1,4 @@
+import type { Cart } from '@/types/cart'
 import type { Nft } from '@/types/nft'
 import { NFT_FIXTURES } from './fixtures/nfts'
 import { USER_FIXTURES, type UserRecord } from './fixtures/users'
@@ -14,6 +15,7 @@ export interface MockDb {
   nfts: Nft[]
   users: UserRecord[]
   sessions: SessionRecord[]
+    carts: Record<string, Cart>
 }
 
 function createInitialDb(): MockDb {
@@ -21,6 +23,7 @@ function createInitialDb(): MockDb {
     nfts: structuredClone(NFT_FIXTURES),
     users: structuredClone(USER_FIXTURES),
     sessions: [],
+    carts: {},
   }
 }
 

@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { getRouteApi, Link } from '@tanstack/react-router'
+import { getRouteApi, Link, useNavigate } from '@tanstack/react-router'
 import { Heart, Star } from 'lucide-react'
 import { ApiError } from '@/api/httpClient'
+import { useAddToCart } from '@/cart/useCart'
 import { NftCard } from '@/components/catalog/NftCard'
 import { Skeleton } from '@/components/feedback/Skeleton'
 import { StatePanel } from '@/components/feedback/StatePanel'
@@ -51,14 +52,25 @@ function NftDetail({ nft }: { nft: Nft }) {
   const firstAvailable = nft.editions.find((edition) => edition.available > 0)?.type
   const [editionType, setEditionType] = useState<EditionType | undefined>(firstAvailable)
   const [quantity, setQuantity] = useState(1)
+  const addToCart = useAddToCart()
+  const navigate = useNavigate()
 
   const edition = nft.editions.find((item) => item.type === editionType)
   const maxQuantity = edition?.available ?? 0
   const soldOut = maxQuantity === 0
 
-  function changeEdition(next: EditionType) {
+    function changeEdition(next: EditionType) {
     setEditionType(next)
     setQuantity(1)
+    addToCart.reset()
+  }
+
+  function buy() {
+    if (!editionType) return
+    addToCart.mutate(
+      { nftId: nft.id, edition: editionType, quantity },
+      { onSuccess: () => void navigate({ to: '/carrinho' }) },
+    )
   }
 
   return (
@@ -123,8 +135,8 @@ function NftDetail({ nft }: { nft: Nft }) {
             <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
               <QuantityStepper value={quantity} max={maxQuantity} onChange={setQuantity} />
               <div className="flex gap-2">
-                <Button className="h-10 px-8 font-bold" disabled title="Carrinho em breve">
-                  COMPRAR
+                <Button className="h-10 px-8 font-bold" onClick={buy} disabled={addToCart.isPending}>
+                  {addToCart.isPending ? 'ADICIONANDO…' : 'COMPRAR'}
                 </Button>
                 <Button variant="outline" className="h-10" disabled title="Favoritos em breve">
                   <Heart aria-hidden />
@@ -136,6 +148,12 @@ function NftDetail({ nft }: { nft: Nft }) {
           {!soldOut && (
             <p className="mt-2 text-xs text-muted-foreground">
               {maxQuantity === 1 ? 'Última unidade desta edição.' : `${maxQuantity} unidades disponíveis nesta edição.`}
+            </p>
+          )}
+
+           {addToCart.isError && (
+            <p role="alert" className="mt-3 text-sm text-destructive">
+              {addToCart.error.message}
             </p>
           )}
 

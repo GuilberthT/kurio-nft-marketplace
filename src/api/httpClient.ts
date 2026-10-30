@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { getSessionToken, SESSION_EXPIRED_EVENT } from '@/auth/sessionToken'
+import { getGuestCartId } from '@/cart/guestCartId'
 import type { ApiErrorBody, ApiErrorCode } from '@/types/api'
 
 export class ApiError extends Error {
@@ -30,6 +31,7 @@ export const httpClient = axios.create({
 httpClient.interceptors.request.use((config) => {
   const token = getSessionToken()
   if (token) config.headers.Authorization = `Bearer ${token}`
+    config.headers['X-Guest-Cart'] = getGuestCartId()
   return config
 })
 

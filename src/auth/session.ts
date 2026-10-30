@@ -1,5 +1,7 @@
 import { queryOptions, useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { fetchSession, login, logout, register } from '@/api/auth'
+import { mergeGuestCart } from '@/api/cart'
+import { getGuestCartId } from '@/cart/guestCartId'
 import { ApiError } from '@/api/httpClient'
 import type { Session } from '@/types/user'
 import { clearSessionToken, getSessionToken, setSessionToken } from './sessionToken'
@@ -41,9 +43,16 @@ export function endSession(queryClient: QueryClient): void {
   queryClient.setQueryData(sessionKey, null)
 }
 
-function startSession(queryClient: QueryClient, session: Session): void {
+async function startSession(queryClient: QueryClient, session: Session): Promise<void> {
   queryClient.removeQueries({ queryKey: ['private'] })
   setSessionToken(session.token)
+  try {
+    const quote = await mergeGuestCart(getGuestCartId())
+    queryClient.setQueryData([...privateKey(session.user.id), 'cart'], quote)
+  } catch {
+     // Se a junção falhar, o login continua; o carrinho é buscado de novo depois.
+  }
+  queryClient.removeQueries({ queryKey: ['guest-cart'] })
   queryClient.setQueryData(sessionKey, session)
 }
 

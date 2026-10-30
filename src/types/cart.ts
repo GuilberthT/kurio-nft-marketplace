@@ -17,6 +17,8 @@ export interface QuoteLine extends CartItem {
     unitPriceEth: EthAmount
     lineTotalEth: EthAmount
     nftVersion: number
+    tokenId: string
+    available: number
 }
 
 export interface Quote {

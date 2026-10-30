@@ -24,7 +24,7 @@ export function NftGallery({ images, name }: NftGalleryProps) {
                 selected === index ? 'border-primary' : 'border-transparent',
               )}
             >
-              <img src={src} alt="" width={100} height={100} className="size-16 object-cover sm:size-[100px]" />
+              <img src={src} alt="" width={100} height={100} className="size-16 object-cover sm:size-25" />
             </button>
           </li>
         ))}
@@ -36,7 +36,7 @@ export function NftGallery({ images, name }: NftGalleryProps) {
           width={404}
           height={500}
           fetchPriority="high"
-          className="aspect-[404/500] w-full rounded-3xl object-cover"
+          className="aspect-404/500 w-full rounded-3xl object-cover"
         />
       </div>
     </div>

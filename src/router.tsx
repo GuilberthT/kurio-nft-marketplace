@@ -4,6 +4,8 @@ import { validateCatalogSearch } from '@/lib/catalogSearch'
 import { HomePage } from '@/pages/HomePage'
 import { NftDetailPage } from '@/pages/NftDetailPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
+import { CartPage } from '@/pages/CartPage'
+import { CheckoutPage } from '@/pages/CheckoutPage'
 
 const rootRoute = createRootRoute({
   component: RootLayout,
@@ -23,7 +25,19 @@ const nftDetailRoute = createRoute({
   component: NftDetailPage,
 })
 
-const routeTree = rootRoute.addChildren([homeRoute, nftDetailRoute])
+const cartRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/carrinho',
+  component: CartPage,
+})
+
+const checkoutRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/pagamento',
+  component: CheckoutPage,
+})
+
+const routeTree = rootRoute.addChildren([homeRoute, nftDetailRoute, cartRoute, checkoutRoute])
 
 export const router = createRouter({
   routeTree,
