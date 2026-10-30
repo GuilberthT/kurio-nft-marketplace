@@ -1,7 +1,10 @@
 import type { Cart } from '@/types/cart'
 import type { Nft } from '@/types/nft'
+import type { Order } from '@/types/order'
+import type { Wallet } from '@/types/wallet'
 import { NFT_FIXTURES } from './fixtures/nfts'
 import { USER_FIXTURES, type UserRecord } from './fixtures/users'
+import { WALLET_FIXTURES } from './fixtures/wallets'
 
 const STORAGE_KEY = 'kurio:mock-db:v1'
 
@@ -16,6 +19,13 @@ export interface MockDb {
   users: UserRecord[]
   sessions: SessionRecord[]
     carts: Record<string, Cart>
+    wallets: Record<string, Wallet[]>
+    orders: OrderRecord[]
+}
+export interface OrderRecord extends Order {
+  userId: string
+  requestHash: string
+  settleAt: number
 }
 
 function createInitialDb(): MockDb {
@@ -24,6 +34,8 @@ function createInitialDb(): MockDb {
     users: structuredClone(USER_FIXTURES),
     sessions: [],
     carts: {},
+    wallets: WALLET_FIXTURES,
+    orders: [],
   }
 }
 

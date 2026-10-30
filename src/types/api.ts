@@ -5,6 +5,7 @@ export const API_ERROR_CODES = [
   'NOT_FOUND',
   'CONFLICT',
   'UNAVAILABLE',
+  'STALE_QUOTE'
 ] as const
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number]
 

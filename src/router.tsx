@@ -6,6 +6,7 @@ import { NftDetailPage } from '@/pages/NftDetailPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { CartPage } from '@/pages/CartPage'
 import { CheckoutPage } from '@/pages/CheckoutPage'
+import { OrderPage } from '@/pages/OrderPage'
 
 const rootRoute = createRootRoute({
   component: RootLayout,
@@ -37,7 +38,13 @@ const checkoutRoute = createRoute({
   component: CheckoutPage,
 })
 
-const routeTree = rootRoute.addChildren([homeRoute, nftDetailRoute, cartRoute, checkoutRoute])
+const orderRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/pedido/$orderId',
+  component: OrderPage,
+})
+
+const routeTree = rootRoute.addChildren([homeRoute, nftDetailRoute, cartRoute, checkoutRoute, orderRoute])
 
 export const router = createRouter({
   routeTree,
