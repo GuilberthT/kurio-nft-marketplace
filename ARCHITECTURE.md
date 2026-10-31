@@ -4,6 +4,7 @@
 
 ```
 src/
+├── account/      Hooks do perfil e das carteiras e redução do avatar.
 ├── api/          Funções HTTP (Axios). Única porta de saída para o REST.
 ├── auth/         Sessão, token e modal de login.
 ├── cart/         Hooks do carrinho e identificador do visitante.
@@ -11,13 +12,27 @@ src/
 ├── realtime/     Cliente Socket.IO e aplicação dos eventos no cache.
 ├── queries/      Query keys e queryOptions do catálogo e favoritos.
 ├── components/   Interface (shadcn/ui adaptado ao tema do Kurio).
-├── pages/        Telas ligadas às rotas.
-├── lib/          Utilitários (ETH com bigint, labels, validação da URL, QueryClient).
+├── pages/        Telas ligadas às rotas (pages/account: perfil e carteiras).
+├── lib/          Utilitários (ETH com bigint, endereços de carteira, labels, URL, QueryClient).
 ├── types/        Contratos compartilhados entre mocks, estado e interface.
 └── mocks/        MSW: handlers REST, servidor Socket.IO, banco simulado e cenários.
 ```
 
 Componentes, hooks e o cliente Axios **não conhecem os mocks**. Toda resposta simulada vem do MSW, na camada de rede. O painel de cenários (`src/mocks/MockPanel.tsx`) só é carregado quando os mocks estão ligados e fala com a simulação por rotas `/api/__mock/*`.
+
+## Rotas
+
+| Rota | Tela | Acesso |
+| --- | --- | --- |
+| `/` | Início: destaque, catálogo, busca, filtros, ordenação e paginação na URL | Público |
+| `/nft/$nftId` | Detalhe do NFT | Público |
+| `/carrinho` | Carrinho | Público (visitante ou usuário) |
+| `/pagamento` | Pagamento e revisão | Privado |
+| `/pedido/$orderId` | Pedido pendente, recusado ou recibo | Privado |
+| `/conta/perfil` | Dados do perfil, avatar e senha | Privado |
+| `/conta/carteiras` | Carteiras principal e secundária | Privado |
+
+`/conta` redireciona para `/conta/perfil`. Rotas inexistentes mostram a página 404, e o `vercel.json` garante acesso direto e refresh em qualquer rota no ambiente publicado.
 
 ## Contratos REST
 
@@ -38,13 +53,18 @@ Todas as rotas ficam sob `/api`. Os tipos estão em `src/types`.
 | | `POST` e `DELETE /cart/coupon` | 422 para cupom inválido ou expirado |
 | | `POST /cart/merge` | Junta o carrinho do visitante ao do usuário no login |
 | Cotação | (resposta do carrinho) | Subtotal, desconto, taxa de rede e total, com estoque atual por linha |
-| Carteiras | `GET /wallets`, `POST /wallets/:id/connect` | 403 `FORBIDDEN` simula a recusa da carteira |
+| Perfil | `GET` e `PATCH /profile` | 400 `VALIDATION` e 409 `CONFLICT` (usuário ou e-mail em uso) com `fieldErrors` |
+| | `PUT` e `DELETE /profile/avatar` | Imagem em data URL (PNG, JPG ou WebP), reduzida no navegador para 160×160 em WebP |
+| | `POST /profile/password` | 422 se a senha atual estiver errada; 400 para senha fraca ou igual à atual |
+| Carteiras | `GET /wallets` | Carteiras do usuário autenticado |
+| | `POST /wallets`, `PATCH /wallets/:id` | Uma principal e uma secundária por usuário; endereço validado por rede (0x + 40 hex para Ethereum e Polygon, base58 para Solana); 409 para carteira duplicada |
+| | `POST /wallets/:id/connect` | Simula a permissão da extensão; 403 `FORBIDDEN` quando a carteira recusa |
 | Pedidos | `POST /orders` | Exige o cabeçalho `Idempotency-Key`. 409 `STALE_QUOTE` se preço, estoque, cupom ou taxa mudaram; 409 `CONFLICT` se a chave for reutilizada com outro conteúdo |
 | | `GET /orders/:orderId` | 404 para pedido inexistente **ou de outro usuário** |
 
 **Identificação:** o token vai em `Authorization: Bearer <token>`. O visitante é identificado pelo cabeçalho `X-Guest-Cart`, com um id aleatório guardado no navegador.
 
-**Erros:** sempre `{ code, message, fieldErrors? }`. Códigos: `VALIDATION`, `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `STALE_QUOTE`, `UNAVAILABLE`. Falha de conexão vira `ApiError` com código `NETWORK` no interceptor do Axios.
+**Erros:** sempre `{ code, message, fieldErrors? }`. Códigos: `VALIDATION`, `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `STALE_QUOTE`, `UNAVAILABLE`. Falha de conexão vira `ApiError` com código `NETWORK` no interceptor do Axios. Erros por campo aparecem no próprio campo, e o foco vai para o primeiro campo inválido.
 
 **Valores em ETH:** trafegam como strings decimais. Todas as contas usam `bigint` em wei (18 casas), em `src/lib/eth.ts`, e nunca `number`.
 
@@ -72,12 +92,14 @@ O servidor é simulado com `ws.link` do MSW e `@mswjs/socket.io-binding`, e o ap
 
 ## Política de sessão
 
+- Rotas privadas (`/pagamento`, `/pedido/$orderId` e `/conta/*`) usam `beforeLoad` do TanStack Router, que espera a sessão ser conferida antes de desenhar a tela. O `QueryClient` chega às rotas pelo `context` do router. Sem sessão, a tela pede login em um modal e mantém o endereço, então o usuário continua no mesmo lugar depois de entrar
 - O token fica no `localStorage`, para a sessão sobreviver a refresh. A sessão simulada expira em 30 minutos
 - Na carga, `GET /auth/session` valida o token. Se a resposta for 401, o token é descartado
 - Qualquer 401 de uma chamada autenticada dispara o evento `kurio:session-expired`. O app limpa a sessão e abre o modal de login **sem sair da tela**, então o usuário continua de onde parou. O rascunho do checkout fica no `sessionStorage` e é restaurado
 - Todo dado privado mora no cache sob `['private', userId, ...]`. Logout, expiração e troca de usuário removem `['private']` inteiro antes de gravar a nova sessão
 - O socket é recriado a cada troca de usuário: listeners antigos são removidos e eventos de outra sessão não chegam
-- Senhas nunca são guardadas: a simulação armazena SHA-256 de `id:senha`
+- Alterações de perfil e avatar atualizam o usuário dentro da sessão em cache, então o cabeçalho reflete a mudança na hora
+- Senhas nunca são guardadas: a simulação armazena SHA-256 de `id:senha`. A troca de senha confere a senha atual pelo hash
 
 ## Estado do carrinho
 
@@ -103,9 +125,10 @@ O servidor é simulado com `ws.link` do MSW e `@mswjs/socket.io-binding`, e o ap
 | Lista de NFTs | `['nfts', 'list', params]` | `staleTime` 30s, `keepPreviousData` (a lista antiga fica visível, esmaecida, durante a troca) |
 | Facetas | `['nfts', 'facets']` | `staleTime` 5min |
 | Detalhe | `['nfts', 'detail', id]` | `staleTime` 30s, atualizado direto pelo evento `nft.updated` |
-| Sessão | `['session']` | `staleTime` infinito; muda só por login, logout ou expiração |
+| Sessão | `['session']` | `staleTime` infinito; muda só por login, logout, expiração ou edição do perfil |
 | Carrinho | `['private', userId, 'cart']` ou `['guest-cart']` | Substituído pela resposta das mutations; invalidado por eventos |
 | Favoritos | `['private', userId, 'favorites']` | Atualização otimista com rollback |
+| Carteiras | `['private', userId, 'wallets']` | Compartilhada entre a tela de Carteiras e o pagamento; invalidada após cadastro ou edição |
 | Pedido | `['private', userId, 'order', id]` | Consulta a cada 3s enquanto `pending`, como reserva caso o socket esteja caído |
 
 - **Retries:** só para falhas passageiras (`NETWORK`, `UNAVAILABLE`, 5xx), no máximo 2. 4xx não é repetido. Mutations nunca são repetidas automaticamente
@@ -123,13 +146,17 @@ O servidor é simulado com `ws.link` do MSW e `@mswjs/socket.io-binding`, e o ap
 ## Mocks, cenários e persistência
 
 - O banco simulado (`src/mocks/db.ts`) nasce das fixtures e é salvo no `localStorage` (`kurio:mock-db:v1`). O reset restaura o cenário inicial
-- Fixtures determinísticas: 36 NFTs (os 8 do Figma e 28 gerados sem `Math.random`), 2 usuários, carteiras e cupons
+- Fixtures determinísticas: 36 NFTs (os 8 do Figma e 28 gerados sem `Math.random`), 2 usuários, 3 carteiras e 3 cupons
 - Os cenários (`kurio:mock-scenario`) controlam latência, falhas, resultado do pagamento, recusa da carteira, timeout após criar o pedido e falha ao favoritar. Um handler `/api/*` que roda antes dos outros aplica atraso e falha em um único lugar
 - Os mocks ficam ligados também no build de produção, para a demonstração. `VITE_ENABLE_MOCKS=false` desliga
 
 ## Testes
 
-27 testes Playwright em Chromium, nos projetos desktop (1440×900) e mobile (Pixel 7, só os testes `@principal`), contra o build de produção. Cada teste parte de um navegador limpo. Os testes de tempo real passam pelo `socket.io-client` e os de REST pelos handlers do MSW. A regressão visual de início, detalhe, carrinho e pagamento tem baselines versionadas em `e2e/visual.spec.ts-snapshots`. Relatório HTML e traces de falhas ficam em `playwright-report/`.
+30 testes Playwright em Chromium, nos projetos desktop (1440×900) e mobile (Pixel 7, só os testes `@principal`), contra o build de produção. Cada teste parte de um navegador limpo.
+
+Cobrem os 12 cenários do enunciado: catálogo com filtros e histórico; detalhe e recurso inexistente; cadastro, login, expiração, logout e troca de usuário; favoritos com rollback; carrinho, cupons e persistência; compra completa; falha de pagamento, clique duplo e timeout; perfil, avatar, senha e carteiras com validação; preço alterado via Socket.IO no checkout; eventos duplicados e antigos e retomada do pedido pendente; teclado e foco; skeletons, falha e recuperação.
+
+Os testes de tempo real passam pelo `socket.io-client` e os de REST pelos handlers do MSW. A regressão visual de início, detalhe, carrinho e pagamento tem baselines versionadas em `e2e/visual.spec.ts-snapshots` (geradas no Windows, por isso o sufixo `-win32`). Relatório HTML e traces de falhas ficam em `playwright-report/`.
 
 ## Decisões de UX
 
@@ -138,14 +165,15 @@ O servidor é simulado com `ws.link` do MSW e `@mswjs/socket.io-binding`, e o ap
 - **Conectar a carteira é um passo explícito**, para simular a permissão da extensão e o caso de recusa
 - **Revisão antes do envio** em um diálogo com o total no botão ("Confirmar compra de X ETH")
 - **Pedido pendente tem uma tela própria**, que pode ser recarregada sem risco
-- **Ações fora do escopo** (Criadores, Aprenda, Esqueceu a senha, login social) aparecem desabilitadas e anunciadas como "em breve", sem aparentar sucesso
+- **Conta acessível pelo avatar no cabeçalho**, com a barra lateral do Figma; no celular, a barra vira uma faixa com rolagem horizontal
+- **Ações fora do escopo** (Criadores, Aprenda, Esqueceu a senha, login social e itens do menu da conta) aparecem desabilitadas e anunciadas como "em breve", sem aparentar sucesso
 
 ## Desvios do Figma e assets
 
 - As artes dos NFTs não vieram separadas no arquivo. Foram recortadas da imagem exportada do Figma e convertidas para WebP. A galeria repete a mesma arte nas 4 miniaturas
 - Fonte Roboto Mono via `@fontsource-variable/roboto-mono`, servida localmente
 - Cores medidas na imagem exportada e aplicadas como tokens do shadcn (`--primary`, `--card` etc.)
-- Pagamento: os campos "Nome do perfil", "Código de indicação", "Nome ENS" e "ENS ou carteira secundária" foram omitidos. A seleção usa as carteiras cadastradas do usuário
+- Pagamento, Perfil e Carteiras: os campos "Nome do perfil", "Código de indicação", "Nome ENS", "Apelido da carteira" e "ENS ou carteira secundária" foram omitidos. Os fluxos exigidos (dados, avatar, senha, carteiras principal e secundária e seleção da carteira no pagamento) estão completos
 - Detalhe: a aba "Avaliações de colecionadores" e os botões de compartilhar não foram implementados
 - Início: o "Diário da Cunhagem" e o rodapé completo foram simplificados
 - Mobile: a navegação inferior com ícones do frame mobile não foi implementada; o cabeçalho é responsivo
@@ -156,16 +184,14 @@ O servidor é simulado com `ws.link` do MSW e `@mswjs/socket.io-binding`, e o ap
 - Campos com só placeholder no Figma ganharam `<label>` para leitores de tela; erros são ligados ao campo por `aria-describedby` e o foco vai para o primeiro campo inválido
 - Link "Pular para o conteúdo", foco devolvido ao botão que abriu o modal, estados que não dependem só de cor (edição esgotada também fica riscada e anunciada) e skeletons que respeitam `prefers-reduced-motion`
 
-## Limitações e o que ficou fora
+## Limitações
 
-Com o prazo de dois dias, priorizei os fluxos de compra, conta, tempo real, mocks e testes, que concentram os critérios eliminatórios.
-
-- **Perfil do colecionador** (edição de dados, avatar e senha) e **Carteiras** (cadastro e edição) não foram implementados. As carteiras existem nas fixtures e são usadas no checkout. Por isso o teste E2E nº 8 do enunciado não foi entregue
 - A expiração da sessão é verificada nas chamadas autenticadas, não por um timer na interface
 - O token no `localStorage` é aceitável para a simulação; em produção, um cookie `HttpOnly` seria mais seguro
 - O SHA-256 simula o armazenamento sem senha em claro; um backend real usaria um hash lento com sal (bcrypt ou Argon2)
 - O banco simulado vive no navegador: abas do mesmo navegador compartilham dados, navegadores diferentes não
 - A exibição em ETH mostra até 4 casas decimais; as contas internas usam as 18
+- O avatar é guardado como data URL no banco simulado; uma API real usaria upload para armazenamento de arquivos
 
 ## Lighthouse
 
@@ -187,4 +213,4 @@ Como reproduzir: `npm run build && npm run lighthouse`. A configuração está e
 - `robots.txt`, `meta description` e `lang="pt-BR"` para SEO
 - Imagens em WebP com `width` e `height` explícitos, `fetchpriority="high"` na imagem principal e `loading="lazy"` nos cards abaixo da dobra
 
-**Ponto de atenção:** o LCP no mobile, em torno de 3 s, fica acima do ideal (2.5 s). A tela só é desenhada depois de baixar e executar o React e o MSW (cerca de 350 kB comprimidos) e de registrar o Service Worker. O MSW faz parte da demonstração exigida; com um backend real, ele sai do build. Em uma máquina mais lenta, a performance mobile pode ficar abaixo de 90 pelo mesmo motivo.
+**Ponto de atenção:** o LCP no mobile, em torno de 3 s, fica acima do ideal (2.5 s). A tela só é desenhada depois de baixar e executar o React e o MSW (cerca de 350 kB comprimidos) e de registrar o Service Worker. O MSW faz parte da demonstração exigida; com um backend real, ele sai do build. Em uma máquina mais lenta, a performance mobile pode ficar abaixo de 90 pelo mesmo motivo. Carregar o app em paralelo com o MSW foi testado e não trouxe ganho medido, então o código mais simples foi mantido.
