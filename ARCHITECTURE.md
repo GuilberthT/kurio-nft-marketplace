@@ -158,6 +158,8 @@ Cobrem os 12 cenários do enunciado: catálogo com filtros e histórico; detalhe
 
 Os testes de tempo real passam pelo `socket.io-client` e os de REST pelos handlers do MSW. A regressão visual de início, detalhe, carrinho e pagamento tem baselines versionadas em `e2e/visual.spec.ts-snapshots` (geradas no Windows, por isso o sufixo `-win32`). Relatório HTML e traces de falhas ficam em `playwright-report/`.
 
+O tempo é controlado pela simulação, sem relógio falso: a expiração da sessão é disparada por `/api/__mock/expire-sessions`, a liquidação do pedido tem prazo fixo de 2,5 s, a latência vem do cenário e os eventos são disparados pelo teste. `page.clock` não foi usado porque também congelaria os timers do Socket.IO e do MSW (heartbeat e atrasos simulados), tornando os testes de tempo real menos fiéis.
+
 ## Decisões de UX
 
 - **Login e cadastro em modal**, como no Figma: o usuário nunca perde a tela em que estava, inclusive quando a sessão expira no checkout

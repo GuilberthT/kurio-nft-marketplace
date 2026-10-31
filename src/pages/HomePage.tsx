@@ -45,7 +45,7 @@ export function HomePage() {
             <CatalogFilters search={search} onChange={changeFilters} />
           </aside>
 
-          <div>
+          <div className="min-w-0">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <nav aria-label="Seções do catálogo" className="flex gap-5 overflow-x-auto text-sm">
                 {NFT_TABS.map((tab) => (
@@ -65,7 +65,7 @@ export function HomePage() {
                 ))}
               </nav>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <Sheet>
                   <SheetTrigger asChild>
                     <Button variant="outline" size="sm" className="lg:hidden">
@@ -81,7 +81,7 @@ export function HomePage() {
                   </SheetContent>
                 </Sheet>
 
-                <label className="flex items-center gap-1 text-sm">
+                <label className="flex min-w-0 items-center gap-1 text-sm">
                   Ordenar por:
                   <select
                     value={search.sort ?? 'recentes'}
@@ -89,7 +89,8 @@ export function HomePage() {
                       const sort = event.target.value as NftSort
                       changeFilters({ sort: sort === 'recentes' ? undefined : sort })
                     }}
-                    className="rounded-sm bg-transparent py-1 pr-1 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="min-w-0 max-w-full rounded-sm bg-transparent py-1 pr-1 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    
                   >
                     {NFT_SORTS.map((sort) => (
                       <option key={sort} value={sort} className="bg-card">
