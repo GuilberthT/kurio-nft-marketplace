@@ -1,0 +1,2 @@
+lighthouse/reports/** linguist-generated
+public/mockServiceWorker.js linguist-vendored
