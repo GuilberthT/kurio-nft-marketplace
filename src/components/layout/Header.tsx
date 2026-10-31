@@ -1,6 +1,6 @@
 import { useState, type SubmitEvent } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { LogIn, LogOut, Search, ShoppingCart, X } from 'lucide-react'
+import { LogIn, LogOut, Search, ShoppingCart, UserRound, X } from 'lucide-react'
 import { useAuthDialog } from '@/auth/AuthDialogContext'
 import { useLogout, useSession } from '@/auth/session'
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -98,9 +98,18 @@ export function Header() {
 
             {user ? (
             <div className="flex items-center gap-2">
-              <span className="hidden text-sm sm:inline" title={user.email}>
-                @{user.username}
-              </span>
+                            <Link
+                to="/conta/perfil"
+                aria-label={`Minha conta (@${user.username})`}
+                className="flex items-center gap-2 rounded-md px-1 text-sm hover:text-primary focus-visible:outline-2 focus-visible:outline-ring"
+              >
+                {user.avatarUrl ? (
+                  <img src={user.avatarUrl} alt="" width={28} height={28} className="size-7 rounded-full object-cover" />
+                ) : (
+                  <UserRound aria-hidden className="size-5" />
+                )}
+                <span className="hidden sm:inline">@{user.username}</span>
+              </Link>
               <Button size="sm" variant="outline" onClick={() => logout.mutate()} disabled={logout.isPending}>
                 <LogOut aria-hidden />
                 Sair

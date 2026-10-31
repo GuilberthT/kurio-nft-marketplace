@@ -20,6 +20,11 @@ export function FormField({ label, error, hideLabel = false, type, className, ..
     <div className="space-y-1.5">
       <Label htmlFor={id} className={cn(hideLabel && 'sr-only')}>
         {label}
+        {props.required && (
+          <span aria-hidden="true" className="text-primary">
+            {' '}*
+          </span>
+        )}
       </Label>
       <div className="relative">
         <Input
