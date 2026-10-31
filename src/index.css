@@ -105,3 +105,8 @@
     animation: none;
   }
 }
+
+/* Reserva o espaço da barra de rolagem: o layout não "pula" quando ela aparece (CLS). */
+html {
+  scrollbar-gutter: stable;
+}

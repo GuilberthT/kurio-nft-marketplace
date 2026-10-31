@@ -1,0 +1,58 @@
+{
+  "environment": {
+    "date": "2026-10-31T01:10:28.904Z",
+    "lighthouse": "13.6.0",
+    "chrome": "Chrome/156.0.8078.74",
+    "node": "v24.15.0",
+    "os": "Windows_NT 10.0.26300 (x64)",
+    "cpu": "AMD Ryzen 5 5600 6-Core Processor              ",
+    "runsPerPage": 3,
+    "server": "vite preview (build de produção, mocks ligados, cenário padrão)"
+  },
+  "medians": [
+    {
+      "page": "inicio",
+      "profile": "mobile",
+      "performance": 94,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100,
+      "lcpMs": 3110,
+      "cls": 0,
+      "tbtMs": 47
+    },
+    {
+      "page": "detalhe",
+      "profile": "mobile",
+      "performance": 93,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100,
+      "lcpMs": 3260,
+      "cls": 0,
+      "tbtMs": 43
+    },
+    {
+      "page": "inicio",
+      "profile": "desktop",
+      "performance": 100,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100,
+      "lcpMs": 739,
+      "cls": 0.002,
+      "tbtMs": 0
+    },
+    {
+      "page": "detalhe",
+      "profile": "desktop",
+      "performance": 100,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100,
+      "lcpMs": 771,
+      "cls": 0.014,
+      "tbtMs": 0
+    }
+  ]
+}
